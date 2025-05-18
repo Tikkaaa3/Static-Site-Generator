@@ -31,24 +31,22 @@ def extract_title(markdown):
 def generate_page(from_path, template_path, dest_path, basepath):
     print(f"Generating page from {from_path} to {dest_path} using {template_path}")
 
-    f = open(from_path)
-    markdown_file = f.read()
-    f.close()
+    with open(from_path) as f:
+        markdown_file = f.read()
 
-    f = open(template_path)
-    template = f.read()
-    f.close()
+    with open(template_path) as f:
+        template = f.read()
 
     node = markdown_to_html_node(markdown_file)
     html = node.to_html()
     title = extract_title(markdown_file)
 
-    template = template.replace("{{ Title }}", title)
+    # Inject basepath into static asset links and internal URLs
     html = html.replace('href="/', f'href="{basepath}/')
     html = html.replace('src="/', f'src="{basepath}/')
+
+    template = template.replace("{{ Title }}", title)
     template = template.replace("{{ Content }}", html)
-    template = template.replace('href="/"', f'href="{basepath}"')
-    template = template.replace('src="/"', f'src="{basepath}"')
     template = template.replace(
         "{{ BasePath }}", basepath if basepath.endswith("/") else basepath + "/"
     )
@@ -63,9 +61,7 @@ def generate_pages_recursive(dir_path_content, template_path, dest_dir_path, bas
     for item in os.listdir(dir_path_content):
         content_path = os.path.join(dir_path_content, item)
         dest_path = os.path.join(dest_dir_path, item)
-        if os.path.isfile(
-            content_path,
-        ) and content_path.endswith(".md"):
+        if os.path.isfile(content_path) and content_path.endswith(".md"):
             dest_path = dest_path.replace(".md", ".html")
             generate_page(content_path, template_path, dest_path, basepath)
         elif os.path.isfile(content_path):
